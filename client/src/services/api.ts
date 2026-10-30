@@ -1,4 +1,7 @@
-const BASE_URL = '/api/v1';
+const RAW_BASE = import.meta.env.VITE_API_BASE_URL || '';
+const BASE_URL = RAW_BASE
+  ? (RAW_BASE.endsWith('/api/v1') ? RAW_BASE : `${RAW_BASE.replace(/\/$/, '')}/api/v1`)
+  : '/api/v1';
 
 export class ApiClient {
   private static getHeaders(): HeadersInit {
