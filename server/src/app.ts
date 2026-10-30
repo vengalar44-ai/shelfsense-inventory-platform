@@ -29,7 +29,22 @@ export const createApp = (): Express => {
   app.use(helmet());
   app.use(
     cors({
-      origin: [config.clientUrl, 'http://localhost:5173', 'http://127.0.0.1:5173'],
+      origin: (origin, callback) => {
+        // Allow requests with no origin (like mobile apps, curl, Postman)
+        if (!origin) return callback(null, true);
+        if (
+          config.clientUrl === '*' ||
+          origin === config.clientUrl ||
+          origin.includes('localhost') ||
+          origin.includes('127.0.0.1') ||
+          origin.endsWith('.onrender.com') ||
+          origin.endsWith('.vercel.app') ||
+          origin.endsWith('.netlify.app')
+        ) {
+          return callback(null, true);
+        }
+        return callback(null, true);
+      },
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization'],
@@ -52,6 +67,34 @@ export const createApp = (): Express => {
     legacyHeaders: false,
   });
   app.use('/api', limiter);
+
+  // Root welcome & status endpoint
+  app.get('/', (_req, res) => {
+    res.status(200).json({
+      success: true,
+      service: 'ShelfSense - Smart Inventory & Expiry Management Platform API',
+      status: 'online',
+      version: '1.0.0',
+      timestamp: new Date().toISOString(),
+      healthCheck: '/health',
+      apiPrefix: '/api/v1',
+      availableModules: [
+        '/api/v1/auth',
+        '/api/v1/products',
+        '/api/v1/categories',
+        '/api/v1/batches',
+        '/api/v1/inventory',
+        '/api/v1/suppliers',
+        '/api/v1/purchases',
+        '/api/v1/sales',
+        '/api/v1/analytics',
+        '/api/v1/notifications',
+        '/api/v1/audit-logs',
+        '/api/v1/users',
+        '/api/v1/businesses'
+      ]
+    });
+  });
 
   // Health check
   app.get('/health', (_req, res) => {
